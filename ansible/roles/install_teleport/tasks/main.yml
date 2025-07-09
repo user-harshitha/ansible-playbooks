@@ -1,0 +1,22 @@
+- name: Copy install.sh script to the server
+  template:
+    src: teleport/install-teleport.sh.j2
+    dest: /tmp/install-teleport.sh
+    mode: '0755'
+- name: Execute install.sh
+  command: 'bash /tmp/install-teleport.sh {{ join_token }}'
+- name: Ensure labels are present in teleport.yml
+  blockinfile:
+    path: /etc/teleport.yaml
+    marker: '# {mark} ANSIBLE MANAGED BLOCK'
+    insertafter: '^ssh_service:'
+    block: |
+      labels:
+        env: "{{ env }}"
+        client: "{{ client }}"
+- name: Restart Teleport to apply changes
+  systemd:
+    name: teleport
+    state: restarted
+    enabled: 'yes'
+

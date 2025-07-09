@@ -1,0 +1,7 @@
+---
+- name: Install Teleport
+  hosts: target_host
+  become: yes
+  roles:
+    - install_teleport
+

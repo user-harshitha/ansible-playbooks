@@ -1,0 +1,7 @@
+---
+- name: Containerize services
+  hosts: target_host
+  become: yes
+  roles:
+    - containerize_services
+

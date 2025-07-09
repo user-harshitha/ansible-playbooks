@@ -1,0 +1,17 @@
+---
+  
+- name: Set the hostname
+  hostname:
+    name: '{{ hostname }}'
+- name: 'Add 127.0.0.1 {{ hostname }} as the first line of /etc/hosts'
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.0\.1\s+{{ hostname }}$'
+    line: '127.0.0.1 {{ hostname }}'
+    insertbefore: BOF
+    state: present
+    create: 'yes'
+    backup: 'yes'
+- name: Set the system hostname using hostnamectl
+  command: 'hostnamectl set-hostname {{ hostname }}'
+

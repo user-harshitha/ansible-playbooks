@@ -1,0 +1,114 @@
+version: '3.9'
+
+services:
+  tomcat:
+    image: "${TOMCAT_IMAGE}"
+    container_name: "${TOMCAT_CONTAINER_NAME}"
+    network_mode: host
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/perdix-server/actuator/"]
+      interval: 1m          # Check every 1 minute
+      timeout: 10s          # Timeout after 10 seconds
+      retries: 5            # Retry up to 5 times
+      start_period: 30s     # Wait 30 seconds before starting health checks
+    environment:
+      UMASK: 0022
+      CATALINA_BASE: /usr/local/tomcat
+      CATALINA_OPTS: "-Xms512M -Xmx${TOMCAT_MEMORY}"
+      JAVA_OPTS: "-Xms512m -Xmx${TOMCAT_MEMORY} -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Dio.netty.noUnsafe=false -Dio.netty.tryReflectionSetAccessible=true --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.time.zone=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/sun.security.action=ALL-UNNAMED --add-opens java.base/sun.net=ALL-UNNAMED --add-opens java.desktop/java.awt.font=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-opens jdk.naming.rmi/com.sun.jndi.rmi.registry=ALL-UNNAMED --add-opens jdk.unsupported/sun.misc=ALL-UNNAMED"
+      ENCORE_SITE_DIR: /appdata/encoresite
+    volumes:
+      - /appdata:/appdata
+      - /app/tomcat/logs:/usr/local/tomcat/logs
+      - /app/tomcat/conf:/usr/local/tomcat/conf
+      - /app/tomcat/conf/Catalina/localhost:/usr/local/tomcat/conf/Catalina/localhost
+      - /app/tomcat/webapps:/usr/local/tomcat/webapps
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    command: ["sh", "-c", "exec catalina.sh run >> /usr/local/tomcat/logs/catalina.out 2>&1"]
+    deploy:
+      resources:
+        limits:
+          memory: "${TOMCAT_MEMORY}" # Adjust as needed
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  php-fpm:
+    image: "${PHP_IMAGE}"
+    container_name: "${PHP_CONTAINER_NAME}"
+    network_mode: host
+    restart: always
+    environment:
+      TZ: Asia/Kolkata
+    volumes:
+      - /var/run/mysqld:/var/run/mysqld
+      - /appdata:/appdata
+      - /app:/app
+      - /var/log/nginx:/var/log/nginx
+      - /var/log/perdix:/var/log/perdix
+      - /app/services/php-8.3/cli/php.ini:/etc/php/8.3/cli/php.ini
+      - /app/services/php-8.3/fpm/php.ini:/etc/php/8.3/fpm/php.ini
+      - /app/services/php-8.3/fpm/php-fpm.conf:/etc/php/8.3/fpm/php-fpm.conf
+      - /app/services/php-8.3/fpm/www.conf:/etc/php/8.3/fpm/pool.d/www.conf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    deploy:
+      resources:
+        limits:
+          memory: "${PHP_MEMORY}" # Adjust as needed
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  elasticsearch:
+    image: "${ELASTICSEARCH_IMAGE}"
+    container_name: "${ELASTICSEARCH_CONTAINER_NAME}"
+    network_mode: host
+    restart: always
+    environment:
+      - "ES_MEMORY=1g"
+      - "ES_JAVA_OPTS=-Xms${ES_MEMORY:-1g} -Xmx${ES_MEMORY:-1g}"  # Customizable memory (default: 2GB)
+      - "discovery.type=single-node"  # Required for single-node setup
+    volumes:
+       - /database/elasticdata/elasticsearch/nodes:/usr/share/elasticsearch/data/nodes
+       - /app/elasticsearch/config:/usr/share/elasticsearch/config
+       - /app/elasticsearch/bin:/usr/share/elasticsearch/bin
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    deploy:
+      resources:
+        limits:
+          memory: ${ES_MEMORY_LIMIT:-1.5G}
+    profiles:
+      - disable
+
+  mysql:
+    image: "${MYSQL_IMAGE}"
+    container_name: "${MYSQL_CONTAINER_NAME}"
+    network_mode: host
+    security_opt:
+      - seccomp:unconfined
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: dummypassword
+    volumes:
+      - /database:/database
+      - /database/mysqllog:/database/mysqllog
+      - /var/run/mysqld:/var/run/mysqld
+      - /app/services/mysql-8.0/config/mysqld.cnf:/etc/my.cnf
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    deploy:
+      resources:
+        limits:
+          memory: "${MYSQL_MEMORY}" # Adjust as needed
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: "5s"
+      retries: 5
+      start_period: 20s

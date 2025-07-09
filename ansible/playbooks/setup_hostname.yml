@@ -1,0 +1,7 @@
+---
+- name: Set Hostname
+  hosts: target_host
+  become: yes
+  roles:
+    - setup_hostname
+

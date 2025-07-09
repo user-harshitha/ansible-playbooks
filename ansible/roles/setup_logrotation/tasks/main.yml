@@ -1,0 +1,159 @@
+- name: Check if log paths exist
+  stat:
+    path: '{{ item }}'
+  loop: '{{ paths }}'
+  register: path_status
+- name: Filter existing paths
+  set_fact:
+    existing_paths: >-
+      {{ path_status.results | selectattr('stat.exists', 'equalto', true) |
+      map(attribute='item') | list }}
+- name: Generate logrotate configuration for perdix logs
+  copy:
+    dest: /etc/logrotate.d/perdix
+    content: |
+      {% for path in existing_paths %}
+      {{ path }}
+      {
+        maxsize 500M
+        maxage 7
+        rotate 30
+        compress
+        copytruncate
+        missingok
+      }
+      {% endfor %}
+  when: existing_paths | length > 0
+- name: Create cron job for logrotate
+  cron:
+    name: logrotate cron job
+    minute: '*/30'
+    hour: '*'
+    job: logrotate /etc/logrotate.d/perdix
+    state: present
+- name: Create cron job for /app/jenkins cleanup
+  cron:
+    name: /app/jenkins Cleanup
+    minute: '0'
+    hour: '*'
+    job: 'find /app/jenkins -type f -mmin +720 -exec rm -fv {} \;'
+    state: present
+- name: Check if ocr-service exists
+  shell: sudo docker ps -a | grep ocr || true
+  register: ocr_container_status
+  changed_when: false
+- name: Create a cron job for ocr-service cleanup
+  cron:
+    name: ocr-service Cleanup
+    minute: '*/5'
+    hour: '*'
+    job: >-
+      sudo docker exec -it ocr-service rm -rf /code/ocr-service/static/*.jpeg >>
+      /tmp/ocr-temp-cleanup.log
+    state: present
+  when: ocr_container_status.stdout | length > 0
+- name: Create cron job for /app/nginx/apk cleanup (keep last 10 files)
+  cron:
+    name: /app/nginx/apk Cleanup
+    minute: '0'
+    hour: '*/12'
+    job: ls -t /app/nginx/apk/* | tail -n +11 | xargs rm -f
+    state: present
+- name: Check if encoresite path exists
+  stat:
+    path: '{{ item }}'
+  loop: '{{ encoresite_paths }}'
+  register: encoresite_status
+- name: Filter existing encoresite paths
+  set_fact:
+    existing_encoresite_paths: >-
+      {{ encoresite_status.results | selectattr('stat.exists', 'equalto', true)
+      | map(attribute='item') | list }}
+- name: create a cron job for zipping reports in encoresite
+  cron:
+    name: zipping of reports in existing encoresite path
+    minute: '0'
+    hour: '*/2'
+    job: 'find {{ item }} -type f -mtime +2 ! -name ''*.gz'' -exec gzip {} \;'
+  loop: '{{ existing_encoresite_paths }}'
+  when: existing_encoresite_paths | length > 0
+- name: Restart cron service
+  service:
+    name: cron
+    state: restarted
+- name: Resolve permission issues & run logrotate safely
+  block:
+    - name: Extract unique log directories from existing_paths
+      set_fact:
+        log_dirs: '{{ existing_paths | map(''dirname'') | list | unique }}'
+    - name: Check if log directories exist before chmod
+      stat:
+        path: '{{ item }}'
+      loop: '{{ log_dirs }}'
+      register: dir_stats
+    - name: Set list of existing log directories
+      set_fact:
+        existing_log_dirs: >-
+          {{ dir_stats.results | selectattr('stat.exists', 'equalto', true) |
+          map(attribute='item') | list }}
+    - name: Set permissions only for existing directories
+      file:
+        path: '{{ item }}'
+        mode: go-w
+      loop: '{{ existing_log_dirs }}'
+      loop_control:
+        label: '{{ item }}'
+      ignore_errors: true
+    - name: Run logrotate if config exists
+      shell: logrotate /etc/logrotate.d/perdix
+      register: logrotate_result
+      failed_when: logrotate_result.rc != 0
+      ignore_errors: 'yes'
+    - name: Print logrotate result
+      debug:
+        msg: Logrotate successfully executed
+      when: logrotate_result.rc == 0
+    - name: Print logrotate error
+      debug:
+        msg: 'Logrotate failed with error: {{ logrotate_result.stderr }}'
+      when: logrotate_result.rc != 0
+- name: Check if Suricata service exists
+  command: systemctl is-active suricata
+  register: suricata_service_status
+  ignore_errors: 'yes'
+  changed_when: false
+- name: Check if Suricata service is enabled
+  command: systemctl is-enabled suricata
+  register: suricata_enabled_status
+  ignore_errors: 'yes'
+  changed_when: false
+- name: Check if Suricata log directory exists
+  stat:
+    path: /var/log/suricata
+  register: suricata_log_dir
+- name: 'Stop, disable Suricata and remove log directory if service exists'
+  block:
+    - name: Stop Suricata service
+      service:
+        name: suricata
+        state: stopped
+      when: suricata_service_status.rc == 0
+    - name: Disable Suricata service
+      service:
+        name: suricata
+        enabled: 'no'
+      when: suricata_service_status.rc == 0
+    - name: Remove Suricata log directory
+      file:
+        path: /var/log/suricata
+        state: absent
+      when: suricata_log_dir.stat.exists
+  when: suricata_service_status.rc == 0 or suricata_service_status.rc == 3
+- name: Remove Suricata log directory if service is disabled but directory exists
+  file:
+    path: /var/log/suricata
+    state: absent
+  when:
+    - suricata_enabled_status.rc != 0
+    - suricata_log_dir.stat.exists
+

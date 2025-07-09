@@ -1,0 +1,64 @@
+- name: Setup Logrotation
+  hosts: target_host
+  become: 'yes'
+  vars:
+    paths:
+      - /app/tomcat/logs/catalina.out
+      - /app/tomcat/logs/localhost_access_log.2*txt
+      - /app/tomcat2/logs/catalina.out
+      - /app/tomcat2/logs/localhost_access_log.2*txt
+      - /appdata/perdix/form-bulk-downloader/logs
+      - /appdata/perdix/perdix-notifications-dispatcher/logs
+      - /appdata/perdix/perdix-kyc-service/logs
+      - /appdata/perdix/perdix-gateway-service/logs
+      - /appdata/perdix/perdix-process-automator-service/logs
+      - /appdata/perdix/perdix-aadhaar-service/logs
+      - /appdata/perdix/arthmate-lender-handoff-service/logs
+      - /appdata/perdix/lotuspay-nach-service/logs
+      - /appdata/perdix/dm-nac-service/logs
+      - /appdata/perdix/bbps-service/logs
+      - /appdata/perdix/camspay-service/logs
+      - /appdata/perdix/payment-portal/logs
+      - /appdata/perdix/perdix-cersai-cky/logs
+      - /appdata/perdix/perdix-lms/logs
+      - /appdata/perdix/perdix10/logs
+      - /appdata/perdix/customerapp-sdk/logs
+      - /appdata/perdix/power-bi/logs
+      - /appdata/perdix/whatsapp-chatbot-service/logs
+      - /appdata/perdix/next-service/logs
+      - /appdata/perdix/fast-service/logs
+      - /appdata/perdix/ocr-service/logs
+      - /var/log/crunz.log
+      - /var/log/customer.log
+      - /var/log/loan.log
+      - /var/log/schedule.log
+      - /var/log/disbursement.log
+      - /var/log/fldg.log
+      - /var/log/collection.log
+      - /var/log/capitalisation.log
+      - /var/log/disbursemen.log
+      - /var/log/disbursement1.log
+      - /var/log/feeCharge.log
+      - /var/log/feeChargeReversal.log
+      - /var/log/settlement.log
+      - /var/log/ETL_bi_cbs.log
+      - /var/log/cron.log
+      - /var/log/tomcat_auto_restart.log
+      - /var/log/my_log.log
+      - /var/log/writeoff_log.log
+      - /var/log/da_log.log
+      - /var/log/loanid_upload_log.log
+      - /var/log/gstno_upload_log.log
+      - /var/log/cronlogrotaterun
+      - /var/log/monthend.log
+      - /var/log/demand.log
+      - /var/log/optimize_table.log
+      - /var/log/alternatives.log
+      - /cloud-init.log
+      - /cloud-init-output.log
+    encoresite_paths:
+      - /appdata/encoresite/reports/
+      - /appdata/encore-boot-server/encoresite/reports/
+  roles:
+    - setup_logrotation
+

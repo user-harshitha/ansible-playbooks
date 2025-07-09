@@ -1,0 +1,20 @@
+- name: Upload cron job file to target host
+  copy:
+    src: '{{ cron_file_local }}'
+    dest: '{{ cron_file_remote }}'
+    owner: '{{ cron_user }}'
+    group: '{{ cron_user }}'
+    mode: '0644'
+- name: Convert CRLF to LF using sed (if dos2unix is missing)
+  shell: sed -i 's/\r$//' "{{ cron_file_remote }}"
+- name: Ensure cron file ends with a newline
+  shell: 'echo >> "{{ cron_file_remote }}"'
+- name: 'Install the uploaded cron file for user {{ cron_user }}'
+  command: 'crontab "{{ cron_file_remote }}"'
+  become_user: '{{ cron_user }}'
+- name: Restart cron service (Linux systemd)
+  service:
+    name: cron
+    state: restarted
+  when: ansible_service_mgr == 'systemd'
+

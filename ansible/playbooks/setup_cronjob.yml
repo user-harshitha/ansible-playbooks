@@ -1,0 +1,10 @@
+---
+- name: Setup Cronjob
+  hosts: target_host
+  become: yes
+  vars:
+    cron_file_remote: /tmp/cron_jobs.txt
+    cron_user: root
+  roles:
+    - setup_cronjob
+
