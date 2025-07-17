@@ -43,7 +43,7 @@
     mode: '0755'
 - name: Update mysql folder with mysqld.cnf file
   template:
-    src: containerized-services/mysql/mysqld.cnf.j2
+    src: containerized-services/mysql-8.0/mysqld.cnf.j2
     dest: /app/services/mysql-8.0/config/mysqld.cnf
     mode: '0644'
 - name: Ensure the /app/services/php-8.3/ directory exists
