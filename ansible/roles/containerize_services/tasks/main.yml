@@ -5,9 +5,9 @@
 - name: Calculate memory allocations
   set_fact:
     total_mem_mb: "{{ ansible_memtotal_mb | int }}"
-    tomcat_memory_mb: "{{ (total_mem_mb * 0.5) | int }}"
-    mysql_memory_mb: "{{ (total_mem_mb * 0.25) | int }}"
-    php_memory_mb: "{{ (total_mem_mb * 0.10) | int }}"
+    tomcat_memory_mb: "{{ (ansible_memtotal_mb * 0.5) | int }}"
+    mysql_memory_mb: "{{ (ansible_memtotal_mb * 0.25) | int }}"
+    php_memory_mb: "{{ (ansible_memtotal_mb * 0.10) | int }}"
     tomcat_memory_str: "{{ tomcat_memory_mb }}m"
     mysql_memory_str: "{{ mysql_memory_mb }}M"
     php_memory_str: "{{ php_memory_mb }}m"
