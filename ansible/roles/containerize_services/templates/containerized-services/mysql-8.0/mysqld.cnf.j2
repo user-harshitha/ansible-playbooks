@@ -41,16 +41,17 @@ group_concat_max_len = 1000000
 
 # Slave Configuration
 server-id=1
-log-bin=/database/mysqlbinlog/mysql-bin.log # Point this to your binlog location
+#log-bin=/database/mysqlbinlog/mysql-bin.log # Point this to your binlog location
 innodb_flush_log_at_trx_commit=1
-sync_binlog=1
+#sync_binlog=1
+skip-log-bin
 #expire_logs_days=3
 binlog_expire_logs_seconds=259200
 max_binlog_size=100M
 #binlog_format=ROW
 
 # Memory allocations
-#innodb_buffer_pool_size=10240M
+innodb_buffer_pool_size={{ mysql_memory_str }}
 #innodb_log_buffer_size=32M
 #innodb_log_file_size=500M
 #innodb_write_io_threads=4

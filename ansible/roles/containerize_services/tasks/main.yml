@@ -1,3 +1,27 @@
+- name: Gather only hardware-related facts
+  ansible.builtin.setup:
+    gather_subset:
+      - hardware
+- name: Calculate memory allocations
+  set_fact:
+    total_mem_mb: "{{ ansible_facts.memtotal_mb | int }}"
+    tomcat_memory_mb: "{{ (total_mem_mb * 0.5) | int }}"
+    mysql_memory_mb: "{{ (total_mem_mb * 0.25) | int }}"
+    php_memory_mb: "{{ (total_mem_mb * 0.10) | int }}"
+    tomcat_memory_str: "{{ tomcat_memory_mb }}m"
+    mysql_memory_str: "{{ mysql_memory_mb }}M"
+    php_memory_str: "{{ php_memory_mb }}m"
+- name: Create .env file with calculated memory limits
+  copy:
+    dest: /app/docker/.env.j2
+    content: |
+      TOMCAT_IMAGE={{ tomcat_image }}
+      PHP_IMAGE={{ php_image }}
+      MYSQL_IMAGE={{ mysql_image}}
+      TOMCAT_MEMORY={{ tomcat_memory_str }}
+      MYSQL_MEMORY={{ mysql_memory_str }}
+      PHP_MEMORY={{ php_memory_str }}
+    mode: '0644'
 - name: Ensure the /app/docker directory exists
   file:
     path: /app/docker
@@ -5,7 +29,7 @@
     mode: '0755'
 - name: Update docker folder with docker-compose file
   template:
-    src: containerized-services/docker-compose.yml
+    src: containerized-services/docker-compose.yml.j2
     dest: /app/docker/docker-compose.yml
     mode: '0644'
 - name: Ensure the /app/services/mysql-8.0/config/ directory exists
@@ -15,7 +39,7 @@
     mode: '0755'
 - name: Update mysql folder with mysqld.cnf file
   template:
-    src: containerized-services/mysql/mysqld.cnf
+    src: containerized-services/mysql/mysqld.cnf.j2
     dest: /app/services/mysql-8.0/config/mysqld.cnf
     mode: '0644'
 - name: Ensure the /app/services/php-8.3/ directory exists
@@ -29,28 +53,7 @@
     dest: /app/services/php-8.3
     mode: '0755'
     recursive: 'yes'
-- name: Bring up Docker Compose services
-  command: docker compose -f /app/docker/docker-compose.yml up -d
-- name: configure docker-compose service systemd files
-  template:
-    src: 'containerized-services/{{ item }}'
-    dest: /etc/systemd/system/
-  with_items:
-    - docker-compose.service
-- name: setting permissions for systemd services
-  file:
-    dest: '/etc/systemd/system/{{ item }}'
-    owner: root
-    group: root
-    mode: 'u=rwX,g=rX,o=rX'
-  with_items:
-    - docker-compose.service
-- name: Restart docker-compose service (with daemon reload)
-  systemd:
-    name: '{{ item }}'
-    state: started
-    daemon_reload: 'yes'
-    enabled: 'yes'
-  with_items:
-    - docker-compose.service
+
+
+
 
