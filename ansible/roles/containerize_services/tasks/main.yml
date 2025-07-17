@@ -17,7 +17,7 @@
 
 - name: Create .env file with calculated memory limits
   copy:
-    dest: /app/docker/.env.j2
+    dest: /app/docker/.env
     content: |
       TOMCAT_IMAGE={{ tomcat_image }}
       PHP_IMAGE={{ php_image }}
