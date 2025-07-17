@@ -51,12 +51,16 @@
     path: /app/services/php-8.3/
     state: directory
     mode: '0755'
-- name: 'Update PHP folder with cli, fpm config files'
+- name: 'Recursively copy PHP folder with cli, fpm config files'
   copy:
-    src: roles/containerize_services/templates/containerized-services/php-8.3
+    src: containerized-services/php-8.3
     dest: /app/services/php-8.3
     mode: '0755'
-    recursive: 'yes'
+    directory_mode: '0755'
+    remote_src: no
+    owner: root
+    group: root
+    recurse: yes
 
 
 
