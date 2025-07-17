@@ -2,6 +2,7 @@
 - name: Containerize services
   hosts: target_host
   become: yes
+  gather_facts: true
   roles:
     - containerize_services
 
