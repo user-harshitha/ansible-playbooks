@@ -53,7 +53,7 @@
     mode: '0755'
 - name: Copy PHP tar.gz archive
   ansible.builtin.copy:
-    src: roles/containerize_services/templates/containerized-services/php-8.3.tar.gz   
+    src: containerized-services/php-8.3.tar.gz   
     dest: /app/services/php-8.3.tar.gz           
     mode: '0644'
 - name: Extract PHP folder from archive
