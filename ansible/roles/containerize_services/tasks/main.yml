@@ -52,7 +52,7 @@
     state: directory
     mode: '0755'
 - name: 'Recursively copy PHP folder with cli, fpm config files'
-  copy:
+  template:
     src: containerized-services/php-8.3
     dest: /app/services/php-8.3
     mode: '0755'
