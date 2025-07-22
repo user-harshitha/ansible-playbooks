@@ -10,7 +10,7 @@
 
 - name: Copy selected nginx config files
   copy:
-    src: "nginx_configs/{{ item }}.conf"
+    src: "nginx_config/{{ item }}.conf"
     dest: "{{ include_dir }}/{{ item }}.conf"
     mode: '0644'
   loop: "{{ app_list }}"
