@@ -8,6 +8,19 @@
     state: directory
     mode: '0755'
 
+- name: Check if PHP is running on Docker (port 8001 open)
+  wait_for:
+    host: 127.0.0.1
+    port: 8001
+    timeout: 1
+    state: started
+  register: php_docker_check
+  ignore_errors: true
+
+- name: Set PHP running mode
+  set_fact:
+    php_running_on_docker: "{{ php_docker_check is not failed }}"
+
 - name: Copy selected nginx config files
   copy:
     src: "nginx_config/{{ item }}.conf"
@@ -15,16 +28,44 @@
     mode: '0644'
   loop: "{{ app_list }}"
 
+- name: Copy nginx config file 
+  template:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+    mode: '0644'
+
 - name: Ensure default nginx config file exists
   stat:
     path: /etc/nginx/sites-enabled/default
   register: default_conf
 
-- name: Copy default nginx config if not present
+- name: Copy docker-default config if PHP is running in Docker
   template:
     src: docker-default
     dest: /etc/nginx/sites-enabled/default
     mode: '0644'
+  when: php_running_on_docker
+
+- name: Copy server-default config if PHP is running on host
+  template:
+    src: server-default
+    dest: /etc/nginx/sites-enabled/default
+    mode: '0644'
+  when: not php_running_on_docker
+
+- name: Copy docker-php-fpm config if PHP is running in Docker
+  template:
+    src: docker-php-fpm.conf
+    dest: /etc/nginx/nginxconfig.io/php_fastcgi.conf
+    mode: '0644'
+  when: php_running_on_docker
+
+- name: Copy server-php-fpm config if PHP is running on host
+  template:
+    src: server-php-fpm.conf
+    dest: /etc/nginx/nginxconfig.io/php_fastcgi.conf
+    mode: '0644'
+  when: not php_running_on_docker
 
 - name: Test nginx configuration
   command: nginx -t
