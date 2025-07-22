@@ -19,6 +19,8 @@ server {
     # index.php
     index index.php index.html;
 
+    # reverse proxy config
+    include include.d/*;
 
     # additional config
     include nginxconfig.io/general.conf;  
