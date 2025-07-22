@@ -35,6 +35,7 @@
 
 - name: Reload nginx if config test passed
   service:
-  name: nginx
-  state: reloaded
+    name: nginx
+    state: reloaded
+  when: nginx_test.rc == 0
 
