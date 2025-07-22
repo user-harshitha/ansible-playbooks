@@ -1,0 +1,40 @@
+- name: Split selected apps into a list
+  set_fact:
+    app_list: "{{ selected_apps.split(',') }}"
+
+- name: Ensure include.d directory exists
+  file:
+  path: "{{ include_dir }}"
+  state: directory
+  mode: '0755'
+
+- name: Copy selected nginx config files
+  copy:
+    src: "nginx_configs/{{ item }}.conf"
+    dest: "{{ include_dir }}/{{ item }}.conf"
+    mode: '0644'
+  loop: "{{ app_list }}"
+  when: item in available_apps
+
+- name: Ensure default nginx config file exists
+  stat:
+    path: /etc/nginx/sites-enabled/default
+  register: default_conf
+
+- name: Copy default nginx config if not present
+  template:
+    src: default.j2
+    dest: /etc/nginx/sites-enabled/default
+    mode: '0644'
+  when: not default_conf.stat.exists
+
+- name: Test nginx configuration
+  command: nginx -t
+  register: nginx_test
+  failed_when: nginx_test.rc != 0
+
+- name: Reload nginx if config test passed
+  service:
+  name: nginx
+  state: reloaded
+

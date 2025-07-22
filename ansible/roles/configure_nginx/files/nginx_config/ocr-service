@@ -1,0 +1,5 @@
+    location /ocr-service {
+        proxy_pass http://127.0.0.1:9041;
+        rewrite ^/ocr-service(.*)$ $1 break;
+        include nginxconfig.io/proxy.conf;
+    }

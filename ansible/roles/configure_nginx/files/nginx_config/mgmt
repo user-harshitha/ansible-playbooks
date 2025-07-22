@@ -1,0 +1,3 @@
+location /mgmt {
+       rewrite ^/mgmt/(.*)$ /management/server-ext/receipt.php?uuid=$1 last;
+   }

@@ -1,0 +1,25 @@
+server {
+    listen       80 default_server;
+    listen       [::]:80 default_server;
+    server_name  localhost;
+    proxy_read_timeout 300;
+    proxy_connect_timeout 300;
+    proxy_send_timeout 300;
+    
+    root         /app/nginx;
+    set $base /app/nginx;
+    set $ams_base /app/nginx-ams-api;
+    index index.php index.html index.htm;
+
+#    modsecurity on;
+#    modsecurity_rules_file /etc/nginx/modsec/main.conf;
+    # security
+    include nginxconfig.io/security.conf;
+
+    # index.php
+    index index.php index.html;
+
+
+    # additional config
+    include nginxconfig.io/general.conf;
+}

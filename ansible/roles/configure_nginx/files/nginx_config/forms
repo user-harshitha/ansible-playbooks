@@ -1,0 +1,7 @@
+    location /forms {
+        proxy_pass http://127.0.0.1:8080/forms;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+        include nginxconfig.io/proxy.conf;
+    }

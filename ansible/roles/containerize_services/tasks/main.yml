@@ -26,16 +26,6 @@
       MYSQL_MEMORY={{ mysql_memory_str }}
       PHP_MEMORY={{ php_memory_str }}
     mode: '0644'
-- name: Ensure the /app/docker directory exists
-  file:
-    path: /app/docker
-    state: directory
-    mode: '0755'
-- name: Update docker folder with docker-compose file
-  template:
-    src: containerized-services/docker-compose.yml.j2
-    dest: /app/docker/docker-compose.yml
-    mode: '0644'
 - name: Ensure the /app/services/mysql-8.0/config/ directory exists
   file:
     path: /app/services/mysql-8.0/config/
@@ -62,6 +52,40 @@
     dest: /app/services/
     remote_src: yes
     extra_opts: [--no-overwrite-dir]
+- name: Ensure the /app/docker directory exists
+  file:
+    path: /app/docker
+    state: directory
+    mode: '0755'
+- name: Update docker folder with docker-compose file
+  template:
+    src: containerized-services/docker-compose.yml.j2
+    dest: /app/docker/docker-compose.yml
+    mode: '0644'
+- name: Bring up Docker Compose services
+  command: docker compose -f /app/docker/docker-compose.yml up -d
+- name: configure docker-compose service systemd files
+  template:
+    src: 'containerized-services/{{ item }}'
+    dest: /etc/systemd/system/
+  with_items:
+    - docker-compose.service
+- name: setting permissions for systemd services
+  file:
+    dest: '/etc/systemd/system/{{ item }}'
+    owner: root
+    group: root
+    mode: 'u=rwX,g=rX,o=rX'
+  with_items:
+    - docker-compose.service
+- name: Restart docker-compose service (with daemon reload)
+  systemd:
+    name: '{{ item }}'
+    state: started
+    daemon_reload: 'yes'
+    enabled: 'yes'
+  with_items:
+    - docker-compose.service
 
 
 

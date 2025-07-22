@@ -1,0 +1,9 @@
+---
+- name: Configure Nginx reverse proxy dynamically
+  hosts: target_hosts
+  become: yes
+  vars:
+    include_dir: /etc/nginx/sites-enabled/include.d
+  roles:
+    - configure_nginx
+
