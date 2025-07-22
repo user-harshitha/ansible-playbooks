@@ -22,7 +22,7 @@
 
 - name: Copy default nginx config if not present
   template:
-    src: default.j2
+    src: docker-default
     dest: /etc/nginx/sites-enabled/default
     mode: '0644'
 
