@@ -14,7 +14,6 @@
     dest: "{{ include_dir }}/{{ item }}.conf"
     mode: '0644'
   loop: "{{ app_list }}"
-  when: item in available_apps
 
 - name: Ensure default nginx config file exists
   stat:
